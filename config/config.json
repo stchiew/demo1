@@ -17,12 +17,54 @@
           "manifest": "./src/webparts/demoWorld2/DemoWorld2WebPart.manifest.json"
         }
       ]
+    },
+    "demo-world-3-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/demoWorld3/DemoWorld3WebPart.js",
+          "manifest": "./src/webparts/demoWorld3/DemoWorld3WebPart.manifest.json"
+        }
+      ]
     }
   },
-  "externals": {},
+  "externals": {
+    "sp-init": {
+      "path": "https://pandalenses.sharepoint.com/sites/Judging/_layouts/15/init.js",
+      "globalName": "$_global_init"
+    },
+    "microsoft-ajax": {
+      "path": "https://pandalenses.sharepoint.com/sites/Judging/_layouts/15/MicrosoftAjax.js",
+      "globalName": "Sys",
+      "globalDependencies": [
+        "sp-init"
+      ]
+    },
+    "sp-runtime": {
+      "path": "https://pandalenses.sharepoint.com/sites/Judging/_layouts/15/SP.Runtime.js",
+      "globalName": "SP",
+      "globalDependencies": [
+        "microsoft-ajax"
+      ]
+    },
+    "sharepoint": {
+      "path": "https://pandalenses.sharepoint.com/sites/Judging/_layouts/15/SP.js",
+      "globalName": "SP",
+      "globalDependencies": [
+        "sp-runtime"
+      ]
+    },
+    "reputation": {
+      "path": "https://pandalenses.sharepoint.com/sites/Judging/_layouts/15/reputation.js",
+      "globalName": "SP",
+      "globalDependencies": [
+        "sharepoint"
+      ]
+    }
+  },
   "localizedResources": {
     "DemoWorld1WebPartStrings": "lib/webparts/demoWorld1/loc/{locale}.js",
     "DemoWorld2WebPartStrings": "lib/webparts/demoWorld2/loc/{locale}.js",
-    "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js"
+    "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js",
+    "DemoWorld3WebPartStrings": "lib/webparts/demoWorld3/loc/{locale}.js"
   }
 }

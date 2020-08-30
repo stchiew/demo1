@@ -7,16 +7,16 @@ import {
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 
-import * as strings from 'DemoWorld1WebPartStrings';
-import LikeBox, { ILikeBoxProps } from './components/LikeBox';
+import * as strings from 'DemoWorld3WebPartStrings';
+import DemoWorld3 from './components/DemoWorld3';
+import { IDemoWorld3Props } from './components/IDemoWorld3Props';
 import { sp } from "@pnp/sp/presets/all";
 
-export interface IDemoWorld1WebPartProps {
+export interface IDemoWorld3WebPartProps {
   description: string;
 }
 
-
-export default class DemoWorld1WebPart extends BaseClientSideWebPart<IDemoWorld1WebPartProps> {
+export default class DemoWorld3WebPart extends BaseClientSideWebPart<IDemoWorld3WebPartProps> {
   protected async onInit(): Promise<void> {
 
     await super.onInit();
@@ -27,8 +27,8 @@ export default class DemoWorld1WebPart extends BaseClientSideWebPart<IDemoWorld1
   }
 
   public render(): void {
-    const element: React.ReactElement<ILikeBoxProps> = React.createElement(
-      LikeBox,
+    const element: React.ReactElement<IDemoWorld3Props> = React.createElement(
+      DemoWorld3,
       {
         description: this.properties.description,
         context: this.context

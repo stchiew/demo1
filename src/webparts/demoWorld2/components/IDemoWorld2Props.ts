@@ -1,4 +1,4 @@
-import { IEntry } from './../model/IPage';
+import { IEntry, ISubmission } from './../model/IPage';
 import { IWebPartContext } from "@microsoft/sp-webpart-base";
 
 export interface IDemoWorld2Props {
@@ -7,5 +7,6 @@ export interface IDemoWorld2Props {
 }
 
 export interface IDemoWorld2State {
-  items: IEntry[];
+  entries: ISubmission[];
+  loading: boolean;
 }

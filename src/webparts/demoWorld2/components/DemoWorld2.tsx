@@ -1,54 +1,132 @@
 import * as React from 'react';
 import styles from './DemoWorld2.module.scss';
 import { IDemoWorld2Props, IDemoWorld2State } from './IDemoWorld2Props';
-import { escape } from '@microsoft/sp-lodash-subset';
 import { FieldTextRenderer } from '@pnp/spfx-controls-react/lib/FieldTextRenderer';
 import { IViewField, ListView } from '@pnp/spfx-controls-react/lib/ListView';
 import { IconButton, IIconProps, DefaultButton, IPage } from 'office-ui-fabric-react';
 import { DetailsList, buildColumns, IColumn } from 'office-ui-fabric-react/lib/DetailsList';
-import { IEntry } from '../model/IPage';
+import { IEntry, IResponse, ISubmission } from '../model/IPage';
 import { sp } from "@pnp/sp";
 import "@pnp/sp/webs";
 import "@pnp/sp/lists";
 import "@pnp/sp/items";
+import { Web } from '@pnp/sp/webs';
+import "@pnp/sp/clientside-pages/web";
+import '@pnp/sp/comments/clientside-page';
+import { ClientsidePageFromFile, IClientsidePage } from '@pnp/sp/presets/all';
 
-export interface IResponse {
-  Id: number;
-  Title: string;
-  Page_x0020_Type: string;
-}
+var ilike: boolean = false;
+
 export default class DemoWorld2 extends React.Component<IDemoWorld2Props, IDemoWorld2State> {
-
-  private async _loadPages(): Promise<void> {
-    const _response: IResponse[] = await sp.web.lists
-      .getByTitle('Site Pages').items
-      .select("Id", "Title", "Page_x0020_Type")
-      .get();
-    const _items: IEntry[] = _response.map((item: IResponse) => {
-      const _like: boolean = this._getLikeInfo(item.Page_x0020_Type);
-      return {
-        Title: item.Title,
-        Id: item.Id,
-        LikedByMe: _like
-      };
-    });
-    this.setState({ items: _items });
-  }
-  private _getLikeInfo(ServerPathUrl: string): boolean {
-    return true;
-  }
 
   constructor(props: Readonly<IDemoWorld2Props>) {
     super(props);
-    this.state = { items: [] };
+    this.state = {
+      entries: this.props.items,
+      loading: true
+    };
     //this._renderIcon = this._renderIcon.bind(this);
-    this._alertClicked = this._alertClicked.bind(this);
+    //this._loadLikes();
+  }
 
+  private _loadLikes() {
+    const temp: ISubmission[] = this.state.entries;
+    console.log('BeforeState');
+    console.log(temp);
+    temp.forEach(async (item, i) => {
+      const page = await Web(this.props.context.pageContext.site.absoluteUrl).loadClientsidePage(item.File.ServerRelativeUrl);
+      const info = await page.getLikedByInformation();
+      const likedByMe = info.isLikedByUser;
+      item.LikedByMe = likedByMe;
+    });
+    console.log('AfterState');
+    console.log(temp);
+    this.setState({ entries: temp });
+
+  }
+
+  private async _loadPages(): Promise<void> {
+    const _response: ISubmission[] = await sp.web.lists
+      .getByTitle('Site Pages').items
+      .get();
+    /***    
+      const _items: IEntry[] = _response.map((item: IResponse) => {
+        const _like: boolean = this._getLikeInfo(item.File.ServerRelativeUrl);
+        return {
+          Title: item.Title,
+          Id: item.Id,
+          LikedByMe: _like
+        };
+      });
+      this.setState({ items: _items });
+      **/
+    console.log('All');
+    console.log(_response);
+    _response.forEach(async (item, i) => {
+      const page = await Web(this.props.context.pageContext.site.absoluteUrl).loadClientsidePage(item.File.ServerRelativeUrl);
+      const info = await page.getLikedByInformation();
+      const likedByMe = info.isLikedByUser;
+      item.LikedByMe = likedByMe;
+    });
+    console.log(_response);
+    this.setState({ entries: _response, loading: true });
+
+
+  }
+  private async _getLikeInfo(ServerPathUrl: string): Promise<boolean> {
+    let _likestatus: boolean = false;
+    await this._getPageInfo(ServerPathUrl);
+    _likestatus = ilike;
+    console.log(_likestatus);
+    return _likestatus;
+  }
+
+  private async _getPageInfo(ServerPathUrl: string): Promise<void> {
+    const page = await Web(this.props.context.pageContext.site.absoluteUrl).loadClientsidePage(ServerPathUrl);
+    const info = (await page.getLikedByInformation()).isLikedByUser;
+    console.log('info');
+    console.log(info);
+    ilike = info;
   }
 
   public componentDidMount() {
-    this._loadPages();
+    this._loadLikes();
   }
+
+  public render(): React.ReactElement<IDemoWorld2Props> {
+
+    return (this.state.loading &&
+      <div className={styles.demoWorld2} >
+        <div className={styles.container}>
+          <DetailsList
+            items={this.props.items}
+            setKey="set"
+            columns={this._fields}
+            ariaLabelForSelectionColumn="Toggle selection"
+            ariaLabelForSelectAllCheckbox="Toggle selection for all items"
+            checkButtonAriaLabel="Row checkbox"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  private _renderTitle(item?: ISubmission): any {
+    return <FieldTextRenderer text={item.Title} />;
+  }
+
+  private _renderIcon: any = (item?: ISubmission, index?: number, column?: IColumn) => {
+    console.log(item.Id);
+    console.log(item.LikedByMe);
+    const emojiIcon: IIconProps = { iconName: item.LikedByMe ? 'LikeSolid' : 'Like' };
+    return (<div>{item.Id}{item.LikedByMe}</div>);
+    //return (<div><IconButton title='Title' iconProps={emojiIcon} onClick={() => this.onLikeClicked(item.LikedByMe)} /></div>);
+  }
+
+  public onLikeClicked = (isLiked: boolean) => {
+    alert('I Clicked ' + isLiked);
+  }
+
   private readonly _fields: IColumn[] = [
     {
       key: 'column1',
@@ -73,38 +151,4 @@ export default class DemoWorld2 extends React.Component<IDemoWorld2Props, IDemoW
       onRender: this._renderIcon
     }
   ];
-
-
-  public render(): React.ReactElement<IDemoWorld2Props> {
-    return (
-      <div className={styles.demoWorld2}>
-        <div className={styles.container}>
-          <DetailsList
-            items={this.state.items}
-            setKey="set"
-            columns={this._fields}
-            ariaLabelForSelectionColumn="Toggle selection"
-            ariaLabelForSelectAllCheckbox="Toggle selection for all items"
-            checkButtonAriaLabel="Row checkbox"
-          />
-        </div>
-      </div>
-    );
-  }
-
-  private _renderTitle(item?: IEntry): any {
-    return <FieldTextRenderer text={item.Title} />;
-  }
-
-  private _renderIcon(item?: IEntry): any {
-    const emojiIcon: IIconProps = { iconName: item.LikedByMe ? 'LikeSolid' : 'Like' };
-    return (<div><IconButton title='Title' iconProps={emojiIcon} onClick={() => _iCLicked(item.Title)} /></div>);
-  }
-  public _alertClicked(item: string) {
-    alert('I Clicked ' + item);
-  }
-}
-
-function _iCLicked(item: string) {
-  alert('Clicked ' + item);
 }

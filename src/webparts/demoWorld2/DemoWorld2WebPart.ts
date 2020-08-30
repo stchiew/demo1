@@ -1,3 +1,4 @@
+import { ISubmission } from './model/IPage';
 import * as React from 'react';
 import * as ReactDom from 'react-dom';
 import { Version } from '@microsoft/sp-core-library';
@@ -15,6 +16,7 @@ import { sp } from '@pnp/sp';
 import '@pnp/sp/webs';
 import '@pnp/sp/lists';
 import '@pnp/sp/items';
+import { Web } from '@pnp/sp/webs';
 
 export interface IDemoWorld2WebPartProps {
   description: string;
@@ -22,7 +24,7 @@ export interface IDemoWorld2WebPartProps {
 
 export default class DemoWorld2WebPart extends BaseClientSideWebPart<IDemoWorld2WebPartProps> {
 
-  private _items: any[];
+  private _items: ISubmission[];
 
   protected async onInit(): Promise<void> {
     await super.onInit();
@@ -31,8 +33,34 @@ export default class DemoWorld2WebPart extends BaseClientSideWebPart<IDemoWorld2
       spfxContext: this.context
     });
 
-    this._items = await sp.web.lists.getByTitle('Site Pages').items.get();
+    this._items = await sp.web.lists.getByTitle('Site Pages').items
+      .select('Id,Title,File/ServerRelativeUrl')
+      .expand('File')
+      .get();
+
+    this._items.forEach((item, i) => {
+      item.LikedByMe = false;
+    });
+    console.log('Initial');
+    console.log(this._items);
   }
+
+  private _getLikeInfo(ServerPathUrl: string): boolean {
+    let _likestatus: boolean = false;
+    this._getPageInfo(ServerPathUrl).then((i) => {
+      _likestatus = i;
+    });
+
+    return _likestatus;
+  }
+
+  private async _getPageInfo(ServerPathUrl: string): Promise<boolean> {
+    const page = await Web(this.context.pageContext.site.absoluteUrl).loadClientsidePage(ServerPathUrl);
+    const info = (await page.getLikedByInformation()).isLikedByUser;
+    console.log(info);
+    return info;
+  }
+
 
   public render(): void {
     const element: React.ReactElement<IDemoWorld2Props> = React.createElement(
@@ -52,6 +80,10 @@ export default class DemoWorld2WebPart extends BaseClientSideWebPart<IDemoWorld2
 
   protected get dataVersion(): Version {
     return Version.parse('1.0');
+  }
+
+  private _getPages() {
+
   }
 
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {

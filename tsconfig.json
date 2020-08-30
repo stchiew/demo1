@@ -20,11 +20,14 @@
     ],
     "types": [
       "es6-promise",
-      "webpack-env"
+      "webpack-env",
+      "microsoft-ajax",
+      "sharepoint"
     ],
     "lib": [
       "es5",
       "dom",
+      "ES2017",
       "es2015.collection"
     ]
   },
